@@ -1,0 +1,2 @@
+function getContent(){return new Promise(function(resolve,reject){var url="https://www.parksproject.us/collections/all?sort_by=best-selling";$.ajax({url:url,success:function(data){resolve(data)},error:function(err){reject(err)}})})}
+//# sourceMappingURL=/cdn/shop/t/833/assets/render-quickshop.js.map?v=15720901100696634931720049253

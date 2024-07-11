@@ -1,0 +1,98 @@
+//<script>
+bouncex.init1Response({
+    "brand_styles": false,
+    "webfonts": false,
+    "cookie": {
+        "did": "7124173572327538826",
+        "vid": 1720510427982334,
+        "v": {
+            "ever_logged_in": false,
+            "submitted_onsite": false,
+            "cart": false,
+            "valid_domain": true,
+            "cart_set": false,
+            "logged_in_identified": false,
+            "last_selected_sku": false
+        },
+        "dgFirstLoad": true,
+        "hardID": "2iuC0WIcWmag08Ek425qDGEXA6Z",
+        "softID": "2iuC0chf9vSLDBJbznFjvoHjOYi",
+        "dg": {
+            "isPreviousCustomer": false,
+            "isSubscriber": false,
+            "isTextSubscriber": false,
+            "used_legacy": false,
+            "cache_ts": 1720510418480
+        },
+        "fvt": 1720330936,
+        "ao": 0,
+        "lp": "https%3A%2F%2Fwww.parksproject.us%2Fcollections%2Fall",
+        "as": 0,
+        "vpv": 7,
+        "d": "d",
+        "r": "www.google.com",
+        "cvt": 1720510427,
+        "sid": 16,
+        "gcr": 1,
+        "m": 0,
+        "lvt": 1720511235,
+        "rcs_google.": 1
+    },
+    "debug": false,
+    "testmode": {
+        "bxtest": false,
+        "office": false,
+        "bxdev": false
+    },
+    "state": {
+        "newvid": false,
+        "iol": false,
+        "tn": 1720511235,
+        "pvid": 7,
+        "gdpr": false,
+        "casl": false,
+        "us": false,
+        "device": {
+            "browser": "Chrome",
+            "version": "126.0.0.0",
+            "platform": "Windows 10",
+            "device_type": "desktop"
+        },
+        "no_kinesis": true,
+        "request_token": "b5111b66523c2b3c716be340125ad41bb6a68ef78fc26978277d62b1eede31aa",
+        "mobile": false,
+        "vip": "182.191.60.169",
+        "geo": {
+            "country": "PK",
+            "country_code": "PK",
+            "country_code3": "PAK",
+            "country_name": "Pakistan",
+            "region": "PB",
+            "region_name": "Punjab",
+            "city": "Gujranwala",
+            "postal_code": "40410",
+            "zip": "40410",
+            "latitude": 32.299999999999997,
+            "longitude": 72.900000000000006,
+            "area_code": "",
+            "dma_code": null,
+            "metro_code": null,
+            "continent_code": "AS"
+        }
+    },
+    "gbi_stacks": false,
+    "creatives": false,
+    "campaigns": false,
+    "gbi2_enabled": false,
+    "ssp_config": false,
+    "push_filepath": "\/",
+    "sms_enabled": false,
+    "sms_terms_conditions_link": "",
+    "sms_short_codes": [],
+    "brand_name": "",
+    "ads_config": {},
+    "visit_cookie_updates": {
+        "is_go_session": false,
+        "is_gp_session": false
+    }
+});

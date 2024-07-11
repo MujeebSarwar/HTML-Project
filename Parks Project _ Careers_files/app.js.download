@@ -1,0 +1,316 @@
+(function () {
+  if (typeof Els === 'undefined' || typeof Els.cup === 'undefined')
+    return false;
+
+  if(typeof Els.formatMoney === 'undefined'){
+    Els.formatMoney = function(e,t){function n(e,t){return"undefined"==typeof e?t:e}function r(e,t,r,i){if(t=n(t,2),r=n(r,","),i=n(i,"."),isNaN(e)||null==e)return 0;e=(e/100).toFixed(t);var o=e.split("."),a=o[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g,"$1"+r),s=o[1]?i+o[1]:"";return a+s}"string"==typeof e&&(e=e.replace(".",""));var i="",o=/\{\{\s*(\w+)\s*\}\}/,a=t||this.money_format;switch(a.match(o)[1]){case"amount":i=r(e,2);break;case"amount_no_decimals":i=r(e,0);break;case"amount_with_comma_separator":i=r(e,2,".",",");break;case"amount_no_decimals_with_comma_separator":i=r(e,0,".",",")}return a.replace(o,i)};
+  }
+
+  if (typeof Els.loadScript === 'undefined')
+    Els.loadScript = function (a, b) {
+      var c = document.createElement("script");
+      c.type = "text/javascript", c.readyState ? c.onreadystatechange = function () {
+        "loaded" != c.readyState && "complete" != c.readyState || (c.onreadystatechange = null, b())
+      } : c.onload = function () {
+        b()
+      }, c.src = a, document.getElementsByTagName("head")[0].appendChild(c)
+    };
+
+  if (typeof Els.loadResources === 'undefined')
+    Els.loadScripts = function (resources, callback) {
+      if (!resources.length)
+        return callback();
+      var resource = resources.shift();
+      if (typeof resource.key === 'string' && typeof window[resource.key] !== 'undefined') {
+        return Els.loadScripts(resources, callback);
+      }
+      var url = resource.src || resource;
+      Els.loadScript(url, function () {
+        Els.loadScripts(resources, callback);
+      });
+    };
+
+  var scripts = [{src: '//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.4/jquery.min.js', key: 'jQuery'}];
+  if(!(Els.cup.settings && Els.cup.settings.settings && Els.cup.settings.settings.theme_app_extensions_enabled)){
+    scripts.unshift(Els.cup.params.root + 'settings/' + Els.cup.params.id + '.js?'+Math.random());
+  }
+
+  Els.loadScripts(scripts, function () {
+    var $ = window.$ || window.jQuery;
+    var config = (function (config) {
+      config = {
+        settings: $.extend({
+          widgetPath: 'form[action="/cart/add"]'
+        }, config.settings),
+        counters: config.counters
+      };
+      return {
+        get: function (key) {
+          return config['settings'][key];
+        },
+        set: function (key, value) {
+          config['settings'][key] = value;
+        },
+        getCounters: function () {
+          return config.counters.filter(function (c) {
+            return c.enabled == true;
+          });
+        },
+        setCounters: function (counters) {
+          return config.counters = counters
+        }
+      };
+    })(Els.cup.settings);
+
+    var money = (function(money_format){
+      return {
+        formatMoney: function(amount){ return Els.formatMoney(amount,money_format); }
+      };
+    })(Els.cup.params.money_format);
+
+    var addDynamicValues = function (counterSales, values) {
+      for (var key in counterSales) {
+        if(key.indexOf('{{ex') !== -1) {
+          var expValue = counterSales[key];
+          key = key.replace(/[{}]*/g, '');
+          values[key] = expValue;
+        }
+      }
+      return values;
+    };
+
+    var api = (function () {
+      //todo cache product responses
+      return {
+        getProduct: function (handle, callback) {
+          $.get('/products/' + handle + '?view=elscup-json', function (data) {
+            callback(JSON.parse(data));
+          });
+        },
+        getSearch: function(callback) {
+          $.get('/search?view=elscup-json', function (data) {
+            callback(JSON.parse(data));
+          });
+        },
+        getAggregatedSales: function (counterId, productHandle, callback) {
+          var processData = function (data) {
+            if(data && data.hasOwnProperty('aggregated_sales') && data['aggregated_sales'].hasOwnProperty(counterId)){
+              var values = {
+                items_sold: data['aggregated_sales'][counterId]['is'] ? data['aggregated_sales'][counterId]['is'] : 0,
+                items_sold_value: data['aggregated_sales'][counterId]['isv'] ? data['aggregated_sales'][counterId]['isv'] : 0,
+                customers_purchased: data['aggregated_sales'][counterId]['cp'] ? data['aggregated_sales'][counterId]['cp'] : 0,
+                orders_number: data['aggregated_sales'][counterId]['on'] ? data['aggregated_sales'][counterId]['on'] : 0
+              };
+              values = addDynamicValues(data['aggregated_sales'][counterId], values);
+              callback(values);
+            }
+          };
+          if(productHandle){
+            this.getProduct(productHandle, processData);
+          }else{
+            this.getSearch(processData);
+          }
+        },
+        getProductSales: function (counterId, productHandle, callback) {
+          this.getProduct(productHandle, function (data) {
+            if(data && data.hasOwnProperty('product_sales') && data['product_sales'].hasOwnProperty(counterId)){
+              var values = {
+                items_sold: data['product_sales'][counterId]['is'] ? data['product_sales'][counterId]['is'] : 0,
+                items_sold_value: data['product_sales'][counterId]['isv'] ? data['product_sales'][counterId]['isv'] : 0,
+                customers_purchased: data['product_sales'][counterId]['cp'] ? data['product_sales'][counterId]['cp'] : 0,
+                orders_number: data['product_sales'][counterId]['on'] ? data['product_sales'][counterId]['on'] : 0
+              };
+              values = addDynamicValues(data['product_sales'][counterId], values);
+              callback(values);
+            }
+          })
+        }
+      };
+    })();
+
+    var template = (function () {
+      return {
+        parse: function (str, data) {
+          var retStr = str;
+          for (var x in data) {
+            var placeh = '\{\{' + x + '\}\}';
+
+            var value = data[x];
+            if(value && x.indexOf('_value')!==-1){
+              value = money.formatMoney(value*100);
+              if(value.indexOf('$')===0){
+                value = '$'+value;
+              }
+            }
+            retStr = retStr.replace(new RegExp(placeh, 'g'), value);
+          }
+          return retStr;
+        }
+      };
+    })();
+
+    var Page = (function ($) {
+      return {
+        addCssCode: function (code) {
+          if (code && code.length) {
+            $('head').append('<style type="text/css">' + code + '</style>');
+          }
+        },
+        addCss: function (urls) {
+          urls.forEach(function (url) {
+            $('head').append('<link rel="stylesheet" href="' + url + '" type="text/css" />');
+          });
+        },
+        addElement: function (el) {
+          $('body').append(el);
+        },
+        getCounterWrappers: function (id, createIfNotFound) {
+          var $wrappers = $('.els-cup-box[data-id='+id+']');
+          if($wrappers.length){
+            var wrappersArr = [];
+            $wrappers.each(function () {
+              wrappersArr.push($(this));
+            });
+            return wrappersArr;
+          }
+          if(!createIfNotFound)
+            return null;
+          var $parent = $(config.get('widgetPath')).first();
+          if(!$parent.length){
+            return null;
+          }
+          var product = Els.cup.params.product;
+          if(!product)
+            return null;
+          $wrapper = $('<div class="els-cup-box" data-id="'+id+'" data-product-id="'+product.id+'" data-product-handle="'+product.handle+'"></div>');
+          $parent.append($wrapper);
+          return [$wrapper];
+        },
+        getProductByElement: function ($el) {
+          if(!$el.data('product-id') || $el.data('product-id') === '{{product.id}}')
+            return null;
+          return new Product({id:$el.data('product-id'), handle: $el.data('product-handle')});
+        }
+      };
+    })($);
+
+    var Product = function (data) {
+      this.getId = function () {
+        return parseInt(data.id);
+      };
+      this.getHandle = function () {
+        return data.handle;
+      };
+    };
+
+    var Counter = function (_data, api, template) {
+      var self = this;
+      this.getId = function () {
+        return _data.id;
+      };
+      this.getTemplate = function () {
+        return _data.raw_html;
+      };
+      this.productInvolved = function (product) {
+        if(_data.target === 'all')
+          return true;
+        if(_data.target !== 'products' || !_data.products)
+          return false;
+        return _data.products.indexOf(product.getId()) !== -1;
+      };
+      this.isAggregated = function () {
+        return _data.aggregated == true;
+      };
+      this.getContent = function (product, callback) {
+        if(product && !this.productInvolved(product))
+          return callback();
+
+        if(!product && !this.isAggregated())
+          return callback();
+
+        if(this.isAggregated()){
+          api.getAggregatedSales(this.getId(), product ? product.getHandle() : null, function (sales) {
+            if(sales)
+              return callback(template.parse(self.getTemplate(), sales));
+          });
+        } else {
+          api.getProductSales(this.getId(), product.getHandle(), function (sales) {
+            if(sales)
+              return callback(template.parse(self.getTemplate(), sales));
+          });
+        }
+      };
+      this.isEmbedded = function () {
+        return _data.custom_position == true;
+      };
+      this.animationEnabled = function () {
+        return typeof _data.settings.widgetSettings.enableAnimation !== 'undefined' && _data.settings.widgetSettings.enableAnimation === false ? false : true;
+      };
+    };
+
+    Els.cup.app = (function () {
+      if (typeof Els.cup.onConfigLoaded === 'function') {
+        Els.cup.onConfigLoaded(config);
+      }
+      if(!(Els.cup.settings && Els.cup.settings.settings && Els.cup.settings.settings.theme_app_extensions_enabled)){
+        Page.addCss([Els.cup.params.root + 'css/app.css']);
+      }
+      Page.addCssCode(config.get('css'));
+
+      return {
+        init: function () {
+          var counters = config.getCounters().map(function (data) {
+            return new Counter(data, api, template);
+          });
+          counters.forEach(function (counter) {
+            var $wrappers = Page.getCounterWrappers(counter.getId(), !counter.isEmbedded());
+            if($wrappers && $wrappers.length){
+              $wrappers.forEach(function ($wrapper) {
+                var product = Page.getProductByElement($wrapper);
+                counter.getContent(product, function (content) {
+                  if(content){
+                    $wrapper.html(content);
+                    if(!counter.animationEnabled())
+                      return false;
+                    $wrapper.find('.els-cup-w .els-cup-w-val').each(function () {
+                      var $this = $(this);
+                      var value = $this.text();
+                      var init = value;
+                      $this.html('');
+
+                      var template = /[^0-9]+/g;
+                      var defaultValue = value;
+
+                      if (template.test(value) || value === '') {
+                        value = value.replace(/[^\d]/g, '');
+                      }
+
+                      value = value.replace(/([^0-9])+/, '').replace('.', '').replace(',','');
+
+                      $this.prop('Counter',0).animate({
+                        Counter: value
+                      }, {
+                        duration: 2000,
+                        easing: 'swing',
+                        step: function (now) {
+                          $this.text(Math.ceil(now));
+                        },
+                        done: function () {
+                          if(defaultValue !== value) {
+                              init = defaultValue;
+                          }
+                          $this.text(init);
+                        }
+                      });
+                    });
+                  }
+                });
+              });
+            }
+          });
+        }
+      }
+    })();
+    Els.cup.app.init();
+  });
+})();

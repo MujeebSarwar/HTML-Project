@@ -1,0 +1,377 @@
+window.cookie_bar_app_domain = "https://cookiebar.hulkapps.com"
+
+var hulkCookieBarClick = hulkCheckCookie('hulkCookieBarClick');
+
+function hulkCheckCookie(cname) {
+	var name = cname + "=";
+	var decodedCookie = decodeURIComponent(document.cookie);
+	var ca = decodedCookie.split(';');
+	for(var i = 0; i < ca.length; i++) {
+		var c = ca[i];
+		while (c.charAt(0) == ' ') {
+			c = c.substring(1);
+		}
+		if (c.indexOf(name) == 0) {
+			return c.substring(name.length, c.length);
+		}
+	}
+	return "";
+}
+if (hulkCookieBarClick == '') {
+	if (window.popup_data) {
+		const data = window.popup_data
+		if (data.have_any_plan && data.notification_setting['popup_status']) {
+            if (data.notification_setting['ca_only'] || data.notification_setting['va_only'] || data.notification_setting['eu_only'] || data.notification_setting['utah_only'] || data.notification_setting['colorado_only'] || data.notification_setting['connecticut_only'] || data.notification_setting['pipeda_only']) {
+                hulkAVIsValidRegion(data)
+			} else {
+                hulkCookieBarSetPopup(data.notification_setting, data.plan_features, data.region_check, data.notification_setting['va_only'], data.notification_setting['ca_only'], data.notification_setting['eu_only'], data.notification_setting['utah_only'], data.notification_setting['colorado_only'], data.notification_setting['connecticut_only'], data.notification_setting['pipeda_only'], data.have_any_plan, data.shop_domain, data.preference_bar)
+			}
+		}
+	} else {
+		hulkCookieBarGetPopup();
+	}
+}
+
+function hulkAVIsValidRegion(data) {
+	var shop = Shopify.shop
+	var xhttp = new XMLHttpRequest();
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			if (xhttp.response) {
+                var data = JSON.parse(xhttp.response);
+                if(data.notification_setting && data.notification_setting.popup_status && (!data.region_check || (data.region_check && (data.eu_enabled || data.ca_enabled ||data.va_enabled || data.utah_enabled || data.colorado_enabled || data.connecticut_enabled || data.pipeda_enabled)))) {
+                        hulkCookieBarSetPopup(data.notification_setting, data.plan_features, data.region_check, data.notification_setting.va_only, data.notification_setting.ca_only, data.notification_setting.eu_only, data.utah_enabled, data.colorado_enabled, data.connecticut_enabled, data.pipeda_enabled, data.have_any_plan, data.shop_domain, data.preference_bar)
+				}
+			}
+		}
+	}
+	xhttp.open("GET", window.cookie_bar_app_domain+"/hulk_cookie_bar_is_valid_region?shop="+shop);
+	xhttp.send();
+}
+
+function hulkCookieBarSetPopup(notification_setting, plan_features, region_check, va_enabled, ca_enabled,  eu_enabled, utah_enabled, colorado_enabled, connecticut_enabled, pipeda_enabled, have_any_plan, shop_domain, preference_bar) {
+    if(notification_setting && notification_setting.popup_status && (!region_check || (region_check && (eu_enabled || ca_enabled || va_enabled || utah_enabled || colorado_enabled || connecticut_enabled || pipeda_enabled)))) {
+        var pop_up_position = 'bottom: 0;'
+		if(notification_setting.popup_desktop_vertical_position == 'top'){
+			pop_up_position = 'top: 0;bottom: auto;'
+		}
+		if(notification_setting.popup_type == 'corner_pop' && !notification_setting.allow_cookie_preference) {
+			pop_up_position = 'bottom: 20px;'
+			if(notification_setting.popup_desktop_vertical_position == 'top') {
+				pop_up_position = 'top: 20px;'
+			}
+			if(notification_setting.popup_desktop_horizontal_position == 'right') {
+				pop_up_position += 'right: 20px;';
+			} else {
+				pop_up_position += 'left: 20px;'
+			}
+		}
+
+		notification_setting.description_text.replace(/\r\n/g, '');
+		notification_setting.description_text.replace(/\r/, '<br/>');
+		notification_setting.description_text.replace(/\n/, '<br/>');
+
+		function showBanner(){
+			if(notification_setting.accept_button_text_font_family) {
+				hulkAddCss("https://fonts.googleapis.com/css?family="+notification_setting.accept_button_text_font_family);
+			}
+			if(notification_setting.deny_button_text_font_family) {
+				hulkAddCss("https://fonts.googleapis.com/css?family="+notification_setting.deny_button_text_font_family);
+			}
+			if(notification_setting.preference_button_text_font_family) {
+				hulkAddCss("https://fonts.googleapis.com/css?family="+notification_setting.preference_button_text_font_family);
+			}
+			hulkAddCss(window.cookie_bar_app_domain +"/hulk_cookie_bar/cookie_bar.css");
+			var user_selection = ''
+			var hulkCookiePref = hulkGetCookie('hulkCookiePref');
+			var hulkCookieBarClick = hulkGetCookie('hulkCookieBarClick');
+
+			if(notification_setting.allow_cookie_preference && have_any_plan && plan_features.includes("cookie-preference-management")) {
+				if (hulkCookiePref == '') {
+					user_selection = '.hulk_cookie_bar .bar_heading { color: ' + notification_setting.title_text_color + ' !important; } .hulk_top-content .switch-label:before { background-color: ' + notification_setting.off_switch_bg_color + ' } .hulk_top-content .switch-input:checked + .switch-label:before { background-color: '+notification_setting.on_switch_bg_color + ' } .hulk_top-content .switch-input:checked + .switch-label:after, .hulk_top-content .switch-label:after { background-color: ' + notification_setting.switch_color + ' } .hulk_cookie_bar .accept_btn { background: ' + notification_setting.button_bg_color + '; color: ' + notification_setting.button_text_color + '; border-radius: ' + notification_setting.button_border_radius + 'px; border: 2px ' + notification_setting.button_border_color + ' solid;  font-family: '+ notification_setting.accept_button_text_font_family + '; font-size: '+notification_setting.accept_button_text_size +'px !important } .hulk_cookie_bar .accept_btn:hover { background: ' + notification_setting.button_hover_bg + '; color: ' + notification_setting.button_hover_text_color + '; border: 2px ' + notification_setting.button_hover_border_color + ' solid; } .hulk_cookie_bar button.deny_btn { background: ' + notification_setting.deny_button_bg_color + '; color: ' + notification_setting.deny_button_text_color + '; border-radius: ' + notification_setting.button_border_radius + 'px; border: 2px ' + notification_setting.deny_button_border_color + ' solid;  font-family: '+ notification_setting.deny_button_text_font_family + '; font-size: '+notification_setting.deny_button_text_size +'px !important } .hulk_cookie_bar button.deny_btn:hover { background: ' + notification_setting.deny_button_hover_bg + '; color: ' + notification_setting.deny_button_hover_text_color + '; border: 2px ' + notification_setting.deny_button_hover_border_color + ' solid; } .hulk_cookie_bar .pre_btn { color: ' + notification_setting.button_bg_color + '; border: 2px ' + notification_setting.button_bg_color + ' solid; border-radius: ' + notification_setting.button_border_radius + 'px; font-family: '+ notification_setting.preference_button_text_font_family + '; font-size: '+notification_setting.preference_button_text_size +'px !important } .hulk_cookie_bar { background: ' + notification_setting.fs_popup_color  + '; } .hulk_cookie_bar .description_text { color: ' + notification_setting.description_text_color + '; } .hulk_cookie_bar .description_text a { color: ' + notification_setting.description_link_color + ' !important; text-decoration: underline; } .hulk_cookie_bar button.bar_btn:hover { background: ' + notification_setting.button_hover_bg + '; color: ' + notification_setting.button_hover_text_color + '; border: 2px ' + notification_setting.button_hover_border_color + ' solid; }'+ '@media screen and (min-width : 735px) { .hulk_cookie-preference-bar { '+ pop_up_position +' } }';
+				}
+			} else {
+					if (hulkCookieBarClick == '') {
+						user_selection = '.hulk_cookie_bar { background: ' + notification_setting.description_bg_color + '; } .hulk_cookie_bar .description_text { color: ' + notification_setting.description_text_color + '; } .hulk_cookie_bar .description_text a { color: ' + notification_setting.description_link_color + ' !important; text-decoration: underline; } .hulk_cookie_bar button.bar_btn { background: ' + notification_setting.button_bg_color + '; color: ' + notification_setting.button_text_color + '; border-radius: ' + notification_setting.button_border_radius + 'px; border: 2px ' + notification_setting.button_border_color + ' solid; font-family: '+ notification_setting.accept_button_text_font_family + '; font-size: '+notification_setting.accept_button_text_size +'px !important } .hulk_cookie_bar button.bar_btn:hover { background: ' + notification_setting.button_hover_bg + '; color: ' + notification_setting.button_hover_text_color + '; border: 2px ' + notification_setting.button_hover_border_color + ' solid; } .hulk_cookie_bar .deny_btn { background: ' + notification_setting.deny_button_bg_color + '; color: ' + notification_setting.deny_button_text_color + '; border-radius: ' + notification_setting.button_border_radius + 'px; border: 2px ' + notification_setting.deny_button_border_color + ' solid; font-family: '+ notification_setting.deny_button_text_font_family + '; font-size: '+notification_setting.deny_button_text_size +'px !important} .hulk_cookie_bar .deny_btn:hover { background: ' + notification_setting.deny_button_hover_bg + '; color: ' + notification_setting.deny_button_hover_text_color + '; border: 2px ' + notification_setting.deny_button_hover_border_color + ' solid; }'+ '@media screen and (min-width : 735px) { .hulk_cookie_bar { '+ pop_up_position +' } }' ;
+					}
+				}
+
+			var sheet = document.createElement('style')
+			sheet.innerHTML = user_selection;
+			document.body.appendChild(sheet);
+
+			if (notification_setting.allow_cookie_preference && have_any_plan && plan_features.includes("cookie-preference-management")) {
+				var hulkCookieHTML = '';
+				if (hulkCookiePref == '') {
+					hulkCookieHTML = preference_bar;
+				}
+			} else {
+				if (hulkCookieBarClick == '') {
+					hulkCookieHTML = '<div aria-label="cookie consent bar" class="hulk_cookie_bar ' + (notification_setting.popup_type === 'corner_pop' ? 'corner_popup' : '') + ' mobile_' + notification_setting.popup_mobile_position + '" id="hulk_cookie_bar"><div class="description_text">' + notification_setting.description_text + '</div><div class="button_div"><button type="button" class="bar_btn" aria-label="' + notification_setting.button_text + '" onclick="hulkCollectRequest()"><span>' + notification_setting.button_text + '</span></button><button aria-label="' + notification_setting.deny_button_text + '" class="deny_btn ' + (notification_setting.popup_type === 'corner_pop' ? 'close' : '') + '" onclick="hulkHandleDecline()">' + notification_setting.deny_button_text + '</button></div></div>';
+				}
+			}
+
+			var hulk_body_text = hulkCreateHTMLNode(hulkCookieHTML);
+			document.body.appendChild(hulk_body_text);
+
+		}
+
+		function hulkAddCss(fileName) {
+					var head = document.head;
+					var link = document.createElement("link");
+					link.type = "text/css";
+					link.rel = "stylesheet";
+					link.href = fileName;
+					head.appendChild(link);
+				}
+
+		function hulkCreateHTMLNode(htmlCode) {
+			var htmlNode = document.createElement('div');
+			htmlNode.innerHTML = htmlCode;
+			return htmlNode;
+		}
+
+		function hulkHideCookieDiv() {
+			if(notification_setting.allow_cookie_preference){
+				var checkedValue = [];
+				var inputElements = document.getElementsByClassName('switch-input-pref');
+				item = {}
+				for(var i=0; inputElements[i]; ++i){
+					if(inputElements[i].checked){
+						item[ inputElements[i].value] = "true"
+					}else{
+						item[inputElements[i].value] = "false"
+					}
+				}
+				checkedValue.push(item)
+				hulkSetCookie('hulkCookiePref', JSON.stringify(checkedValue), notification_setting.cookie_lifetime);
+			}
+			hulkSetCookie('hulkCookieBarClick', 'clicked', notification_setting.cookie_lifetime);
+			var hulkfadeTarget = document.getElementById("hulk_cookie_bar");
+			if(notification_setting.popup_animation == 'fade' ) {
+			 var hulkfadeEffect = setInterval(function () {
+				 if (!hulkfadeTarget.style.opacity) {
+					 hulkfadeTarget.style.opacity = 1;
+				 }
+				 if (hulkfadeTarget.style.opacity > 0) {
+					 hulkfadeTarget.style.opacity -= 0.1;
+				 } else {
+					 clearInterval(hulkfadeEffect);
+					 hulkfadeTarget.parentNode.removeChild(hulkfadeTarget);
+				 }
+			 }, 50);
+			}
+			else if(notification_setting.popup_animation == 'slide' ) {
+			 hulkfadeTarget.classList.toggle('slide_hide');
+			 setTimeout(function(){
+				 hulkfadeTarget.parentNode.removeChild(hulkfadeTarget);
+			 }, 2000);
+			}
+			 else {
+					hulkfadeTarget.style.display = "none";
+					hulkfadeTarget.parentNode.removeChild(hulkfadeTarget);
+			 }
+		}
+
+		function deleteCookie(name) {
+			var shopify_strick = ['_ab', '_secure_session_id', '_secure_session_id', '_shopify_m', '_shopify_tm', '_shopify_tw', '_storefront_u', '_storefront_u', 'c', 'cart', 'cart_currency', 'cart_sig', 'cart_ts', 'cart_ver', 'checkout', 'checkout_token', 'dynamic_checkout_shown_on_cart', 'hide_shopify_pay_for_checkout', 'keep_alive', 'master_device_id', 'previous_step', 'remember_me', 'secure_customer_sig', 'shopify_pay', 'shopify_pay_redirect', 'storefront_digest', 'tracked_start_checkout', 'checkout_session_lookup', 'identity_state', 'identity_customer_account_number']
+			if(!shopify_strick.includes(name) && !name.startsWith("identity_state_") && !name.startsWith("checkout_session_token_")){
+				document.cookie = name +'=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+			}
+		}
+		 window.hulkCollectRequest = function () {
+			var hulkxhttp = new XMLHttpRequest();
+			hulkxhttp.open("POST", window.cookie_bar_app_domain+"/analytic_update", true);
+			hulkxhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			hulkxhttp.send("shop="+ shop_domain +"&click_action=accept");
+			const userCanBeTracked = window.Shopify.trackingConsent.userCanBeTracked();
+			if(!userCanBeTracked){
+				window.Shopify.trackingConsent.setTrackingConsent(true,hulkHideCookieDiv);
+				document.addEventListener('trackingConsentAccepted',function(){
+				});
+			}
+			hulkHideCookieDiv();
+			deletePrefCookies();
+		}
+
+		function deletePrefCookies(){
+			var hulkCookiePref = hulkGetCookie('hulkCookiePref');
+			if(notification_setting.allow_cookie_preference && hulkCookiePref != ''){
+				deleteCookies = []
+				unclassified = false
+				hulkCookiePrefHash = JSON.parse(hulkCookiePref)
+				for (var i = 0; i < hulkCookiePrefHash.length; i++) {
+					for (var key in hulkCookiePrefHash[i]) {
+						if (hulkCookiePrefHash[i].hasOwnProperty(key)) {
+							if (hulkCookiePrefHash[i][key] == "false")
+							{
+								if(key == "strictly_necessary") {
+									deleteCookies.push("<%= @strictly_necessary %>")
+								} else if(key == "functionality") {
+									deleteCookies.push("<%= @functionality %>")
+								} else if(key == "performance") {
+									deleteCookies.push("<%= @performance %>")
+								} else if(key == "targeting") {
+									deleteCookies.push("<%= @targeting %>")
+								} else if(key == "unclassified") {
+									unclassified = true
+								}
+							}
+						}
+					}
+				}
+				for (var i = 0; i < deleteCookies.length; i++) {
+					cookiesArr = deleteCookies[i].split(',')
+					for (var j = 0; j < cookiesArr.length; j++) {
+						deleteCookie(cookiesArr[j])
+					}
+				}
+				if (unclassified){
+					allCookiesArr = getAllCookies()
+					shopCookies = "<%= @unclassified %>".split(',')
+					unclassifiedDelete = arr_diff(allCookiesArr,shopCookies)
+					for (var j = 0; j < unclassifiedDelete.length; j++) {
+						if (unclassifiedDelete[j] !== 'hulkCookiePref'){
+							deleteCookie(unclassifiedDelete[j])
+						}
+					}
+				}
+			}
+		}
+
+		function getAllCookies() {
+			allCookiesArr = []
+			var allcookies = document.cookie;
+			cookiearray = allcookies.split(';');
+			for(var i=0; i<cookiearray.length; i++) {
+				allCookiesArr.push(cookiearray[i].split('=')[0].trim());
+			}
+			return allCookiesArr;
+		}
+
+		function arr_diff(array1, array2) {
+			var temp = [];
+			array1 = array1.toString().split(',');
+			array2 = array2.toString().split(',');
+
+			for (var i in array1) {
+				if(array2.indexOf(array1[i]) === -1) temp.push(array1[i]);
+			}
+			for(i in array2) {
+				if(array1.indexOf(array2[i]) === -1) temp.push(array2[i]);
+			}
+			return temp.sort((a,b) => a-b);
+		}
+
+		window.hulkHandleDecline = function() {
+			var hulkxhttp = new XMLHttpRequest();
+			hulkxhttp.open("POST", window.cookie_bar_app_domain+"/analytic_update", true);
+			hulkxhttp.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
+			hulkxhttp.send("shop="+ shop_domain +"&click_action=reject");
+			const userCanBeTracked = window.Shopify.trackingConsent.userCanBeTracked();
+			if(!userCanBeTracked){
+				window.Shopify.trackingConsent.setTrackingConsent(false,hulkHideCookieDiv);
+			} else {
+				hulkHideCookieDiv();
+			}
+		}
+
+		function hulkGetCookie(cname) {
+			var name = cname + "=";
+			var decodedCookie = decodeURIComponent(document.cookie);
+			var ca = decodedCookie.split(';');
+			for(var i = 0; i < ca.length; i++) {
+				var c = ca[i];
+				while (c.charAt(0) == ' ') {
+					c = c.substring(1);
+				}
+				if (c.indexOf(name) == 0) {
+					return c.substring(name.length, c.length);
+				}
+			}
+			return "";
+		}
+
+		function hulkSetCookie(cname, cvalue, exdays) {
+			var d = new Date();
+			d.setTime(d.getTime() + (exdays*24*60*60*1000));
+			var expires = "expires="+ d.toUTCString();
+			document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/; samesite=none; secure";
+		}
+
+		function initCookieBanner(){
+			const userCanBeTracked = window.Shopify.trackingConsent.userCanBeTracked();
+			const userTrackingConsent = window.Shopify.trackingConsent.getTrackingConsent();
+			//if(!userCanBeTracked && (userTrackingConsent === 'no_interaction' || userTrackingConsent === '')){
+			if(userTrackingConsent === 'no_interaction' || userTrackingConsent === ''){
+				showBanner();
+			}
+		}
+		window.togglePreferences = function () {
+			var pref_element = document.querySelector(".hulk_allow-preference-bar")
+			if (pref_element.style.display === "none") {
+				pref_element.style.display = "flex";
+				pref_element.ariaExpanded = "true";
+			} else {
+				pref_element.style.display = "none";
+				pref_element.ariaExpanded = "false";
+			}
+		}
+
+		window.langIconChange = function(){
+			let lang_element = document.querySelector("#myLangHeading")
+			let minus_icon = document.querySelector("#myMinusIcon")
+			let plus_icon = document.querySelector("#myPlusIcon")
+			if (lang_element.style.display === "none") {
+				lang_element.style.display = "block";
+				minus_icon.style.display = "flex";
+				plus_icon.style.display = "none";
+			} else {
+				lang_element.style.display = "none";
+				minus_icon.style.display = "none";
+				plus_icon.style.display = "flex";
+			}
+		}
+
+		window.cookieDescHide = function (index){
+			let lang_element = document.querySelector(`#myLangDesc_${index}`)
+			let minus_icon = document.querySelector(`#minusIcon_${index}`)
+			let plus_icon = document.querySelector(`#plusIcon_${index}`)
+			if (lang_element.style.display === "none") {
+				lang_element.style.display = "block";
+				minus_icon.style.display = "flex";
+				plus_icon.style.display = "none";
+			} else {
+				lang_element.style.display = "none";
+				minus_icon.style.display = "none";
+				plus_icon.style.display = "flex";
+			}
+		}
+
+		window.Shopify.loadFeatures(
+			[{ name:   'consent-tracking-api', version: '0.1'}], function(error) {
+				if (error) {
+					throw error;
+				}
+				deletePrefCookies();
+				initCookieBanner();
+			}
+		);
+	}
+}
+
+function hulkCookieBarGetPopup() {
+var shop = Shopify.shop
+var xhttp = new XMLHttpRequest();
+
+	xhttp.onreadystatechange = function() {
+		if (this.readyState == 4 && this.status == 200) {
+			if (xhttp.response) {
+				var data = JSON.parse(xhttp.response);
+				hulkCookieBarSetPopup(data.notification_setting, data.plan_features, data.region_check, data.va_enabled, data.ca_enabled, data.utah_enabled, data.eu_enabled, data.colorado_enabled, data.connecticut_enabled, data.pipeda_enabled, data.have_any_plan, shop, data.preference_bar)
+			}
+		}
+	}
+	xhttp.open("GET", window.cookie_bar_app_domain+"/hulk_cookie_bar?extension=true&shop="+shop);
+	xhttp.send();
+}

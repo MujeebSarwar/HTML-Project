@@ -1,0 +1,13 @@
+footer,
+header,
+#header,
+.main-hero-custom
+.nosto_element,
+article,
+.view-all-items-nosto,
+#nosto-swiper-container-refresh-content {
+    display: none !important;
+}
+#shopify-section-gift-card-settings,.giftcard_grid-buttons{
+    display: none !important;    
+}
